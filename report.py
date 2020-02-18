@@ -17,28 +17,36 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-import requests
-import json
+import argparse
 import datetime
+import json
+import requests
 import sys
 from bs4 import BeautifulSoup
 
 # Файл с информацией о проекте
 jsonFile = "project_info.json"
 
-# Файл справки
-helpMe = '''
-Использование: report.py [начальная дата] [конечная дата]
-Формат даты: дд.мм.гггг
-Оба параметра являются обязательными, если не используются дополнительные параметры.
 
-Дополнительные параметры:
-  -h, --help    Показать эту справку
-'''
+def createParser():
+    parser = argparse.ArgumentParser(description='report.py - программа для генерации отчётов по курсу\
+                                                 "Технология производства программного обеспечения" ПетрГУ')
+    parser.add_argument("startDate",
+                        type=str,
+                        help="начальная дата (дд.мм.гггг)")
+    parser.add_argument("endDate",
+                        type=str,
+                        nargs="?",
+                        help="конечная дата: (дд.мм.гггг), по умолчанию = startDate + 6")
+    parser.add_argument("-t", "--table",
+                        action="store_true",
+                        dest="table",
+                        help="вывод в виде HTML таблицы")
+    return parser
 
 
 class ProjectMember:
-    def __init__(self, name, reportURL: str):
+    def __init__(self, name, reportURL):
         self.name = name
         self.reportURL = reportURL
         self.allTime = 0.0
@@ -46,70 +54,38 @@ class ProjectMember:
 
 
 if __name__ == "__main__":
-    # Вызов справки
-    if len(sys.argv) == 2 and (sys.argv[-1] == "-h" or sys.argv[-1] == "--help"):
-        print("report.py: программа для генерации отчётов по курсу ТТПО Петрозаводского государственного университета.")
-        print(helpMe)
-        sys.exit(0)
+    # Чтение параметров вызова
+    parser = createParser()
+    args = parser.parse_args()
 
-    # Если параметров вызова не 3, вывести ошибку и справку
-    if len(sys.argv) != 3:
-        print("Ошибка: Параметры указаны неверно")
-        print(helpMe)
-        sys.exit(1)
-
-    # Промежуток времени из параметров вызова
-    try:
-        startDate = datetime.datetime.strptime(sys.argv[1], '%d.%m.%Y')
+    # Чтение даты
+    startDate = datetime.datetime.strptime(args.startDate, '%d.%m.%Y')
+    if args.endDate:
         endDate = datetime.datetime.strptime(sys.argv[2], '%d.%m.%Y')
-    except ValueError:
-        print("Ошибка: Некорректный формат даты")
-        print(helpMe)
-        sys.exit(1)
+    else:
+        endDate = startDate + datetime.timedelta(days=6)
 
     # Проверка на корректность ввода даты
     if startDate > endDate:
         print("Ошибка: Начальная дата не может быть больше конечной даты")
-        print(helpMe)
         sys.exit(1)
 
     # Импорт информации о проекте
-    try:
-        with open(jsonFile) as f:
-            projectData = json.load(f)
-    except FileNotFoundError:
-        print(f"Ошибка: Файл '{jsonFile}' не найден")
-        sys.exit(1)
-    except PermissionError:
-        print(f"Ошибка: Файл '{jsonFile}' недоступен")
-        sys.exit(1)
+    with open(jsonFile) as f:
+        projectData = json.load(f)
 
     # Создание списка участников
     membersList = []
-    try:
-        for m in projectData['members']:
-            membersList.append(ProjectMember(m['memberName'], m['reportURL']))
-    except KeyError as e:
-        print(f"Ошибка: отсутствует ключ {e} в '{m}'")
-        sys.exit(1)
+    for m in projectData['members']:
+        membersList.append(ProjectMember(m['memberName'], m['reportURL']))
 
     # Чтение отчётов
     for m in membersList:
         # Получение отчёта из URL
-        try:
-            response = requests.get(m.reportURL)
-            soup = BeautifulSoup(response.content, "html.parser")
-            report = list(filter(None, soup.find("pre", class_="report").text.split("\n")))
-        except requests.exceptions.InvalidSchema:
-            print(f"Ошибка: Некорректный reportURL у участника '{m.name}'")
-            sys.exit(1)
-        except requests.exceptions.MissingSchema:
-            print(f"Ошибка: Некорректный reportURL у участника '{m.name}'")
-            sys.exit(1)
-        except AttributeError:
-            print(f"Ошибка: Отчёт участника '{m.name}' не найден по адресу '{m.reportURL}'")
-            print("Может быть, страница отчёта оформлена неправильно? (См. файл README)")
-            sys.exit(1)
+        response = requests.get(m.reportURL)
+        soup = BeautifulSoup(response.content, "html.parser")
+        report = list(filter(None, soup.find("pre", class_="report").text.split("\n")))
+
         # Подсчёт времени
         for item in report:
             params = item.split(' ', 3)
@@ -119,32 +95,32 @@ if __name__ == "__main__":
                 m.currentTime += float(params[2])
 
     # Вывод отчёта
-    print("ОТЧЕТ О ТЕКУЩЕМ СОСТОЯНИИ ПРОЕКТА")
-    print()
-    print(f"Название проекта:       {projectData['projectName']}")
-    print(f"Период:                 {startDate.strftime('%d.%m.%Y')} - {endDate.strftime('%d.%m.%Y')}")
-    print()
-    print()
-    print("Участник                В этот период   Всего часов")
-    print("------------------------------------------------")
-    for m in membersList:
-        print(m.name, end='')
-        for i in range(24 - len(m.name)):
-            print(' ', end='')
-        print(str(m.currentTime), end='')
-        for i in range(16 - len(str(m.currentTime))):
-            print(' ', end='')
-        print(str(m.allTime))
-    print()
-    print()
-    print("Текущее состояние проекта")
-    print("------------------------------------------------")
-    print()
-    print()
-    print("Завершенные документы (название и ссылка)")
-    print("------------------------------------------------")
-    print()
-    print()
-    print("Отклонения/комментарии менеджмента")
-    print("------------------------------------------------")
-    print()
+    if args.table:
+        timeTable = '''<table class="wikitable" border="1" style="border-collapse: collapse">\
+<th>Участник</th><th>В этот период</th><th>Всего часов</th>'''
+        timeTable += "".join(f"\n<tr><td>{m.name}</td><td>{m.currentTime}</td><td>{m.allTime}</td></tr>"
+                             for m in membersList)
+        timeTable += "</table>"
+    else:
+        timeTable = '''Участник                В этот период   Всего часов
+-----------------------------------------------'''
+        timeTable += "".join(f"\n{m.name:<24}{m.currentTime:<16}{m.allTime}" for m in membersList)
+
+    print(f'''ОТЧЕТ О ТЕКУЩЕМ СОСТОЯНИИ ПРОЕКТА
+
+Название проекта:       {projectData['projectName']}
+Период:                 {startDate.strftime('%d.%m.%Y')} - {endDate.strftime('%d.%m.%Y')}
+
+{timeTable}
+
+Текущее состояние проекта
+------------------------------------------------
+
+
+Завершенные документы (название и ссылка)
+------------------------------------------------
+
+
+Отклонения/комментарии менеджмента
+------------------------------------------------
+''')
