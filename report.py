@@ -45,14 +45,6 @@ def createParser():
     return parser
 
 
-class ProjectMember:
-    def __init__(self, name, reportURL):
-        self.name = name
-        self.reportURL = reportURL
-        self.allTime = 0.0
-        self.currentTime = 0.0
-
-
 if __name__ == "__main__":
     # Чтение параметров вызова
     parser = createParser()
@@ -77,12 +69,17 @@ if __name__ == "__main__":
     # Создание списка участников
     membersList = []
     for m in projectData['members']:
-        membersList.append(ProjectMember(m['memberName'], m['reportURL']))
+        membersList.append({
+            'name': m['memberName'],
+            'reportURL': m['reportURL'],
+            'allTime': 0.0,
+            'currentTime': 0.0
+        })
 
     # Чтение отчётов
     for m in membersList:
         # Получение отчёта из URL
-        response = requests.get(m.reportURL)
+        response = requests.get(m['reportURL'])
         soup = BeautifulSoup(response.content, "html.parser")
         report = list(filter(None, soup.find("pre", class_="report").text.split("\n")))
 
@@ -90,21 +87,21 @@ if __name__ == "__main__":
         for item in report:
             params = item.split(' ', 3)
             # [0] - дата, [2] - время
-            m.allTime += float(params[2])
+            m['allTime'] += float(params[2])
             if startDate <= datetime.datetime.strptime(params[0], "%d.%m.%Y") <= endDate:
-                m.currentTime += float(params[2])
+                m['currentTime'] += float(params[2])
 
     # Вывод отчёта
     if args.table:
         timeTable = '''<table class="wikitable" border="1" style="border-collapse: collapse">\
 <th>Участник</th><th>В этот период</th><th>Всего часов</th>'''
-        timeTable += "".join(f"\n<tr><td>{m.name}</td><td>{m.currentTime}</td><td>{m.allTime}</td></tr>"
+        timeTable += "".join(f"\n<tr><td>{m['name']}</td><td>{m['currentTime']}</td><td>{m['allTime']}</td></tr>"
                              for m in membersList)
         timeTable += "</table>"
     else:
         timeTable = '''Участник                В этот период   Всего часов
 -----------------------------------------------'''
-        timeTable += "".join(f"\n{m.name:<24}{m.currentTime:<16}{m.allTime}" for m in membersList)
+        timeTable += "".join(f"\n{m['name']:<24}{m['currentTime']:<16}{m['allTime']}" for m in membersList)
 
     print(f'''ОТЧЕТ О ТЕКУЩЕМ СОСТОЯНИИ ПРОЕКТА
 
