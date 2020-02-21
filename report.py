@@ -20,7 +20,6 @@ import argparse
 import datetime
 import json
 import requests
-import sys
 from bs4 import BeautifulSoup
 
 # Файл с информацией о проекте
