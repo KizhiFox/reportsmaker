@@ -60,7 +60,7 @@ pip install BeautifulSoup4
 
 * `reportURL`: строка - URL индивидуального отчёта участника
 
-Для примера файл заполнен данными из нашего проекта.
+Для примера [файл](https://github.com/KizhiFox/reportsmaker/blob/master/project_info.json) заполнен данными из нашего проекта.
 
 ### Пример работы программы
 
