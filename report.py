@@ -51,7 +51,7 @@ if __name__ == "__main__":
     # Чтение даты
     startDate = datetime.datetime.strptime(args.startDate, '%d.%m.%Y')
     if args.endDate:
-        endDate = datetime.datetime.strptime(sys.argv[2], '%d.%m.%Y')
+        endDate = datetime.datetime.strptime(args.endDate, '%d.%m.%Y')
     else:
         endDate = startDate + datetime.timedelta(days=6)
 
