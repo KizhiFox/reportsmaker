@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 """
-report.py - simple program for generating reports in the Software
-manufacturing technology course of Petrozavodsk State University
+report - a program for generating reports
 Copyright (C) 2020  Konstantin Artemchuk
 
 This program is free software: you can redistribute it and/or modify
@@ -29,8 +28,7 @@ jsonFile = "project_info.json"
 
 
 def createParser():
-    parser = argparse.ArgumentParser(description='report.py - программа для генерации отчётов по курсу\
-                                                 "Технология производства программного обеспечения" ПетрГУ')
+    parser = argparse.ArgumentParser(description="report - программа для генерации отчётов")
     parser.add_argument("startDate",
                         type=str,
                         help="начальная дата (дд.мм.гггг)")
@@ -57,11 +55,6 @@ if __name__ == "__main__":
     else:
         endDate = startDate + datetime.timedelta(days=6)
 
-    # Проверка на корректность ввода даты
-    if startDate > endDate:
-        print("Ошибка: Начальная дата не может быть больше конечной даты")
-        sys.exit(1)
-
     # Импорт информации о проекте
     with open(jsonFile) as f:
         projectData = json.load(f)
@@ -69,12 +62,11 @@ if __name__ == "__main__":
     # Создание списка участников
     membersList = []
     for m in projectData['members']:
-        membersList.append({
-            'name': m['memberName'],
-            'reportURL': m['reportURL'],
-            'allTime': 0.0,
-            'currentTime': 0.0
-        })
+        membersList.append({'name': m['memberName'],
+                            'reportURL': m['reportURL'],
+                            'allTime': 0.0,
+                            'currentTime': 0.0
+                            })
 
     # Чтение отчётов
     for m in membersList:
