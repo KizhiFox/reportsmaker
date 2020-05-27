@@ -78,7 +78,8 @@ if __name__ == "__main__":
         for item in report:
             params = item.split(' ', 3)
             # [0] - дата, [2] - время
-            m['allTime'] += float(params[2])
+            if datetime.datetime.strptime(params[0], "%d.%m.%Y") <= endDate:
+                m['allTime'] += float(params[2])
             if startDate <= datetime.datetime.strptime(params[0], "%d.%m.%Y") <= endDate:
                 m['currentTime'] += float(params[2])
 
