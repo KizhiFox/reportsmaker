@@ -16,8 +16,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-import argparse
-import datetime
 import json
 import requests
 from bs4 import BeautifulSoup
@@ -26,34 +24,7 @@ from bs4 import BeautifulSoup
 jsonFile = "project_info.json"
 
 
-def createParser():
-    parser = argparse.ArgumentParser(description="report - программа для генерации отчётов")
-    parser.add_argument("startDate",
-                        type=str,
-                        help="начальная дата (дд.мм.гггг)")
-    parser.add_argument("endDate",
-                        type=str,
-                        nargs="?",
-                        help="конечная дата: (дд.мм.гггг), по умолчанию = startDate + 6")
-    parser.add_argument("-t", "--table",
-                        action="store_true",
-                        dest="table",
-                        help="вывод в виде HTML таблицы")
-    return parser
-
-
 if __name__ == "__main__":
-    '''# Чтение параметров вызова
-    parser = createParser()
-    args = parser.parse_args()
-
-    # Чтение даты
-    startDate = datetime.datetime.strptime(args.startDate, '%d.%m.%Y')
-    if args.endDate:
-        endDate = datetime.datetime.strptime(args.endDate, '%d.%m.%Y')
-    else:
-        endDate = startDate + datetime.timedelta(days=6)'''
-
     # Импорт информации о проекте
     with open(jsonFile) as f:
         projectData = json.load(f)
